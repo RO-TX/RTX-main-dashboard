@@ -39,7 +39,10 @@ function LoginForm() {
       setAuth(accessToken, user);
       router.replace(defaultRouteFor(user.role));
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Login failed');
+      // Surface the real message even for non-ApiError failures (e.g. a
+      // malformed NEXT_PUBLIC_API_URL throws before any request is sent) —
+      // otherwise a config bug silently shows a useless generic message.
+      setError(err instanceof Error ? err.message : 'Login failed');
       setLoading(false);
     }
   }
