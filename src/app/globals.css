@@ -1,0 +1,278 @@
+@import 'tailwindcss';
+
+/*
+ * RTX design tokens (see RTX-PLATFORM-STANDARDS.md §3).
+ * Defined in @theme so Tailwind generates utilities: bg-primary, text-heading,
+ * border-border, etc. — and exposes var(--color-*) for direct use.
+ */
+@theme {
+  /* Brand is navy-only (teal removed). Primary === navy base; interactive
+     controls AND emphasis surfaces both use the navy scale, with hierarchy
+     coming from shade depth + glassmorphism rather than a second hue. */
+  --color-primary: #062f4f;
+  --color-primary-hover: #0e3c5c;
+  --color-primary-light: #eef3f7;
+
+  /* "Deep water" navy — base #062F4F + full shade scale. */
+  --color-navy: #062f4f;
+  --color-navy-50: #eef3f7;
+  --color-navy-100: #cfdeea;
+  --color-navy-200: #a0bdd1;
+  --color-navy-300: #6a93b2;
+  --color-navy-400: #3c6c90;
+  --color-navy-500: #1c4e71;
+  --color-navy-600: #0e3c5c;
+  --color-navy-700: #062f4f;
+  --color-navy-800: #05263f;
+  --color-navy-900: #03192b;
+
+  --color-background: #fafafc;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f3f8f9;
+
+  --color-heading: #12243b;
+  --color-body: #445364;
+  --color-muted: #6c7a86;
+
+  --color-border: #d8e3e9;
+  --color-border-light: #eef3f5;
+
+  --color-accent: #3c6c90; /* navy-400 — secondary accent */
+  --color-glow: #a0bdd1; /* navy-200 — focus rings, light diffusion */
+  --color-stone: #c8b8a6;
+
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #062f4f;
+
+  --font-sans: var(--font-outfit), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --radius-card: 1rem;
+}
+
+html,
+body {
+  /* Navy-tinted wash with three soft orbs so frosted glass has real depth to
+     refract. Kept low-contrast to protect text legibility on the surfaces above. */
+  background:
+    radial-gradient(1200px 650px at 100% -8%, color-mix(in srgb, var(--color-navy-300) 45%, transparent), transparent 58%),
+    radial-gradient(1000px 560px at -12% 108%, color-mix(in srgb, var(--color-navy-200) 55%, transparent), transparent 60%),
+    radial-gradient(760px 520px at 52% 48%, color-mix(in srgb, var(--color-navy-100) 40%, transparent), transparent 62%),
+    var(--color-background);
+  background-attachment: fixed;
+  color: var(--color-body);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+/* Thin, subtle scrollbars to match the calm aesthetic */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 999px;
+  border: 2px solid var(--color-background);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent);
+}
+
+/*
+ * Frosted-glass system. One recipe, three elevations. Each surface has:
+ *   - a translucent white fill (kept high enough for AA text contrast)
+ *   - backdrop blur + saturation (the frost)
+ *   - a top-down sheen + a 1px inset specular highlight (reads as real glass)
+ *   - a navy-tinted drop shadow (on-brand depth)
+ * The shared --glass-sheen layer is what makes these look like glass rather
+ * than plain translucent panels.
+ */
+.card,
+.glass {
+  position: relative;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 42%),
+    color-mix(in srgb, #ffffff 72%, transparent);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  /* Outer surface (incl. table container) = clear 2px boundary */
+  border: 2px solid color-mix(in srgb, var(--color-border) 92%, transparent);
+  border-radius: var(--radius-card);
+  box-shadow:
+    0 12px 36px -18px rgba(6, 47, 79, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+/*
+ * Border hierarchy helpers — the deeper you nest, the thinner the boundary.
+ *   .panel-2  → mid-level group inside a card (1.5px)
+ *   .panel-3  → innermost grouping (1px)
+ * Field rows get a slightly darker fill so each is clearly separated.
+ */
+.panel-2 {
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-2xl);
+  background: color-mix(in srgb, var(--color-navy-50) 55%, #ffffff);
+}
+.field-row {
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--color-navy-100) 30%, #ffffff);
+}
+
+/* Stronger frost for overlay panels (modals, popovers) — most opaque for forms. */
+.glass-strong {
+  position: relative;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 40%),
+    color-mix(in srgb, #ffffff 86%, transparent);
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  border: 1px solid color-mix(in srgb, #ffffff 65%, var(--color-border));
+  box-shadow:
+    0 24px 60px -20px rgba(6, 47, 79, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+/* Frosted scrim behind modals/dialogs — blur signals background dismissal. */
+.glass-scrim {
+  background: color-mix(in srgb, var(--color-navy-900) 42%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* Translucent frosted input — for search/fields that sit on glass. */
+.glass-input {
+  background: color-mix(in srgb, #ffffff 55%, transparent);
+  border: 1px solid color-mix(in srgb, #ffffff 45%, var(--color-border));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/*
+ * Premium glass card — frosted surface with a soft inner luminance and two
+ * luminous edge-lights (a horizontal streak across the top, a vertical streak
+ * down the left) that catch the light like a real glass panel. For card DIVS
+ * only — it clips overflow, so don't use it on scroll containers (tables).
+ * Note: the inner glow alpha is kept ~0.22 (not the copied `3`) so the surface
+ * stays frosted and text remains legible on a light background.
+ */
+.glass-card {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 44%),
+    color-mix(in srgb, #ffffff 66%, transparent);
+  backdrop-filter: blur(28px) saturate(155%);
+  -webkit-backdrop-filter: blur(28px) saturate(155%);
+  /* Outer card = thickest, clearest boundary (border hierarchy) */
+  border: 2px solid color-mix(in srgb, var(--color-border) 92%, transparent);
+  border-radius: var(--radius-card);
+  box-shadow:
+    0 14px 40px -20px rgba(6, 47, 79, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 0 40px 6px rgba(255, 255, 255, 0.22);
+}
+/* Edge-lights (shared with overlay panels for a consistent glass language). */
+.glass-card::before,
+.glass-strong::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.85), transparent);
+}
+.glass-card::after,
+.glass-strong::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 100%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.85), transparent, rgba(255, 255, 255, 0.3));
+}
+.glass-strong {
+  overflow: hidden;
+}
+
+/* Animations */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Respect prefers-reduced-motion: kill non-essential motion, keep instant state changes */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* iOS Safari zooms the page when a focused input's font-size is < 16px */
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Skeleton shimmer */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-alt) 25%,
+    var(--color-border-light) 37%,
+    var(--color-surface-alt) 63%
+  );
+  background-size: 400% 100%;
+  animation: shimmer 1.4s ease infinite;
+  border-radius: 0.5rem;
+}
+@keyframes shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
