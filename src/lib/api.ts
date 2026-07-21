@@ -3,7 +3,10 @@
 import { authStore } from './auth-store';
 import type { ApiEnvelope, Pagination } from './types';
 
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000/api';
+// Trim whitespace and a trailing slash — common paste mistakes when setting
+// NEXT_PUBLIC_API_URL in a host's dashboard (e.g. a trailing "/" would double
+// up against the leading "/" on every path passed to buildUrl).
+const BASE = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000/api').trim().replace(/\/+$/, '');
 
 export class ApiError extends Error {
   status: number;
@@ -24,7 +27,14 @@ interface RequestOptions {
 }
 
 function buildUrl(path: string, query?: RequestOptions['query']): string {
-  const url = new URL(BASE + path);
+  let url: URL;
+  try {
+    url = new URL(BASE + path);
+  } catch {
+    throw new Error(
+      `Invalid API URL "${BASE + path}" — check NEXT_PUBLIC_API_URL (currently "${BASE}"), it must include the protocol (https://...)`,
+    );
+  }
   if (query) {
     for (const [k, v] of Object.entries(query)) {
       if (v !== undefined && v !== '') url.searchParams.set(k, String(v));

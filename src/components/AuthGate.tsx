@@ -30,12 +30,12 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     let active = true;
 
     (async () => {
-      // No token at all → try the refresh cookie once, else login.
-      if (!accessToken) {
-        const ok = await tryRefresh();
-        if (!ok) return active && router.replace('/login');
-      }
       try {
+        // No token at all → try the refresh cookie once, else login.
+        if (!accessToken) {
+          const ok = await tryRefresh();
+          if (!ok) return active && router.replace('/login');
+        }
         const me = await api.get<User>('/auth/me');
         if (!active) return;
         if (me.role === 'customer') {
@@ -44,8 +44,14 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         }
         setUser(me);
         setChecking(false);
-      } catch {
-        if (active) router.replace('/login');
+      } catch (err) {
+        // Any failure here (network error, malformed API URL, bad response)
+        // must never leave the user stuck on the loading spinner forever.
+        if (active) {
+          // eslint-disable-next-line no-console
+          console.error('AuthGate: session check failed', err);
+          router.replace('/login');
+        }
       }
     })();
 
