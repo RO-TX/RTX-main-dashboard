@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/auth-store';
 import { PageHeader, Card } from '@/components/ui';
 
 const cnBtn =
-  'inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-hover disabled:opacity-60';
+  'inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-base font-semibold text-white transition hover:bg-primary-hover disabled:opacity-60';
 
 const PRESETS: { label: string; method: Method; path: string; body?: string }[] = [
   { label: 'GET /auth/me', method: 'GET', path: '/auth/me' },
@@ -116,7 +116,7 @@ export default function ApiTesterPage() {
               <select
                 value={method}
                 onChange={(e) => setMethod(e.target.value as Method)}
-                className="rounded-xl border border-border bg-surface-alt px-3 py-2.5 text-sm font-semibold text-heading outline-none focus:border-primary"
+                className="rounded-xl border border-border bg-surface-alt px-3 py-2.5 text-base font-semibold text-heading outline-none focus:border-primary"
               >
                 {METHODS.map((m) => (
                   <option key={m}>{m}</option>
@@ -126,7 +126,7 @@ export default function ApiTesterPage() {
                 value={path}
                 onChange={(e) => setPath(e.target.value)}
                 spellCheck={false}
-                className="min-w-[240px] flex-1 rounded-xl border border-border bg-surface-alt px-3 py-2.5 font-mono text-sm text-heading outline-none focus:border-primary focus:ring-2 focus:ring-glow"
+                className="min-w-[240px] flex-1 rounded-xl border border-border bg-surface-alt px-3 py-2.5 font-mono text-base text-heading outline-none focus:border-primary focus:ring-2 focus:ring-glow"
                 placeholder="/catalog/products"
               />
               <button onClick={send} disabled={loading} className={cnBtn}>
@@ -137,13 +137,13 @@ export default function ApiTesterPage() {
 
             {(method === 'POST' || method === 'PATCH') && (
               <div className="mt-3">
-                <label className="mb-1 block text-xs font-medium text-muted">Request body (JSON)</label>
+                <label className="mb-1 block text-sm font-medium text-muted">Request body (JSON)</label>
                 <textarea
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
                   spellCheck={false}
                   rows={8}
-                  className="w-full rounded-xl border border-border bg-navy-900 px-3 py-2.5 font-mono text-xs text-navy-100 outline-none focus:border-primary"
+                  className="w-full rounded-xl border border-border bg-navy-900 px-3 py-2.5 font-mono text-sm text-navy-100 outline-none focus:border-primary"
                   placeholder='{ "key": "value" }'
                 />
               </div>
@@ -157,7 +157,7 @@ export default function ApiTesterPage() {
               {result && (
                 <div className="flex items-center gap-3">
                   <span
-                    className={`rounded-lg px-2.5 py-1 text-xs font-bold ${
+                    className={`rounded-lg px-2.5 py-1 text-sm font-bold ${
                       result.ok ? 'bg-success/10 text-success' : 'bg-error/10 text-error'
                     }`}
                   >
@@ -165,7 +165,7 @@ export default function ApiTesterPage() {
                   </span>
                   <button
                     onClick={copyResult}
-                    className="flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs text-muted hover:bg-surface-alt"
+                    className="flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-sm text-muted hover:bg-surface-alt"
                   >
                     {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                     {copied ? 'Copied' : 'Copy'}
@@ -173,7 +173,7 @@ export default function ApiTesterPage() {
                 </div>
               )}
             </div>
-            <pre className="max-h-[420px] overflow-auto rounded-xl bg-navy-900 p-4 font-mono text-xs leading-relaxed text-navy-100">
+            <pre className="max-h-[420px] overflow-auto rounded-xl bg-navy-900 p-4 font-mono text-sm leading-relaxed text-navy-100">
               {result ? JSON.stringify(result.body, null, 2) : 'Send a request to see the response…'}
             </pre>
           </Card>
@@ -188,7 +188,7 @@ export default function ApiTesterPage() {
                 <button
                   key={p.label}
                   onClick={() => applyPreset(p)}
-                  className="rounded-lg px-3 py-2 text-left font-mono text-xs text-body transition hover:bg-primary-light hover:text-primary"
+                  className="rounded-lg px-3 py-2 text-left font-mono text-sm text-body transition hover:bg-primary-light hover:text-primary"
                 >
                   {p.label}
                 </button>
@@ -196,11 +196,11 @@ export default function ApiTesterPage() {
             </div>
           </Card>
           <Card>
-            <h3 className="mb-2 text-sm font-bold text-heading">Auth</h3>
-            <p className="text-xs text-muted">
+            <h3 className="mb-2 text-base font-bold text-heading">Auth</h3>
+            <p className="text-sm text-muted">
               {token ? 'Access token attached ✓' : 'No token — log in first.'}
             </p>
-            <p className="mt-2 break-all font-mono text-[10px] text-muted">
+            <p className="mt-2 break-all font-mono text-xs text-muted">
               {token ? `${token.slice(0, 32)}…` : ''}
             </p>
           </Card>

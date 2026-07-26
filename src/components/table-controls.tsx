@@ -14,7 +14,7 @@ export function FilterChip({
   return (
     <button
       onClick={onClick}
-      className={`rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition ${
+      className={`rounded-lg px-3 py-1.5 text-sm font-semibold capitalize transition ${
         active
           ? 'bg-primary text-white'
           : 'border border-border bg-surface text-body hover:bg-surface-alt'
@@ -35,7 +35,7 @@ export function Pager({
   if (!pagination || pagination.totalPages <= 1) return null;
   const { page, totalPages, total } = pagination;
   return (
-    <div className="mt-4 flex items-center justify-between text-sm text-muted">
+    <div className="mt-4 flex items-center justify-between text-base text-muted">
       <span>{total} total</span>
       <div className="flex items-center gap-2">
         <button

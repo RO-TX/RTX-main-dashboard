@@ -8,9 +8,8 @@ import { toast } from '@/lib/toast';
 import { formatCurrency, cn } from '@/lib/format';
 import {
   PageHeader,
-  Table,
-  Th,
-  Td,
+  DataTable,
+  DetailPanel,
   Loading,
   ErrorState,
   EmptyState,
@@ -18,6 +17,7 @@ import {
   StatusBadge,
   ConfirmButton,
 } from '@/components/ui';
+import type { DataTableColumn } from '@/components/ui';
 import { Pager } from '@/components/table-controls';
 import { ProductModal } from './ProductModal';
 import type { Product, Pagination } from '@/lib/types';
@@ -29,6 +29,7 @@ export default function ProductsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [view, setView] = useState<'table' | 'grid'>('table');
+  const [selected, setSelected] = useState<Product | null>(null);
 
   // debounce search
   function onSearch(v: string) {
@@ -54,11 +55,63 @@ export default function ProductsPage() {
     try {
       await api.del(`/catalog/products/${id}`);
       toast.success('Product deleted');
+      setSelected((s) => (s?._id === id ? null : s));
       refetch();
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : 'Failed to delete');
     }
   }
+
+  const columns: DataTableColumn<Product>[] = [
+    {
+      key: 'product',
+      label: 'Product',
+      render: (p) => (
+        <div className="flex items-center gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={p.images?.[0]} alt="" className="h-10 w-10 rounded-lg border border-border object-cover" />
+          <span className="font-medium text-heading">{p.name}</span>
+        </div>
+      ),
+    },
+    { key: 'sku', label: 'SKU', render: (p) => <span className="text-muted">{p.skuid}</span> },
+    {
+      key: 'category',
+      label: 'Category',
+      render: (p) => (typeof p.category === 'object' ? p.category.name : '—'),
+    },
+    { key: 'price', label: 'Price', render: (p) => <span className="font-semibold text-heading">{formatCurrency(p.price)}</span> },
+    {
+      key: 'stock',
+      label: 'Stock',
+      render: (p) => (
+        <span className={cn('font-semibold', p.quantity <= 5 ? 'text-warning' : 'text-body')}>{p.quantity}</span>
+      ),
+    },
+    { key: 'status', label: 'Status', render: (p) => <StatusBadge status={p.isActive ? 'active' : 'inactive'} /> },
+    {
+      key: 'actions',
+      label: '',
+      render: (p) => (
+        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          <button
+            onClick={() => setEditing(p)}
+            className="rounded-lg p-2 text-muted transition hover:bg-primary-light hover:text-primary"
+            title="Edit"
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
+          <ConfirmButton
+            onConfirm={() => remove(p._id)}
+            title="Delete product"
+            className="rounded-lg p-2 text-muted transition hover:bg-error/10 hover:text-error"
+          >
+            <Trash2 className="h-4 w-4" />
+          </ConfirmButton>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div>
@@ -99,7 +152,7 @@ export default function ProductsPage() {
             value={search}
             onChange={(e) => onSearch(e.target.value)}
             placeholder="Search products…"
-            className="w-full rounded-xl border border-border bg-surface py-2.5 pl-10 pr-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-glow"
+            className="w-full rounded-xl border border-border bg-surface py-2.5 pl-10 pr-3 text-base outline-none focus:border-primary focus:ring-2 focus:ring-glow"
           />
         </div>
 
@@ -111,7 +164,7 @@ export default function ProductsPage() {
             onClick={() => setView('table')}
             title="Row view"
             className={cn(
-              'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition',
+              'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition',
               view === 'table' ? 'bg-primary text-white' : 'text-muted hover:text-heading',
             )}
           >
@@ -122,7 +175,7 @@ export default function ProductsPage() {
             onClick={() => setView('grid')}
             title="Card preview"
             className={cn(
-              'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition',
+              'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition',
               view === 'grid' ? 'bg-primary text-white' : 'text-muted hover:text-heading',
             )}
           >
@@ -147,68 +200,49 @@ export default function ProductsPage() {
           <Pager pagination={data.pagination} onPage={setPage} />
         </>
       ) : (
-        <>
-          <Table>
-            <thead>
-              <tr>
-                <Th>Product</Th>
-                <Th>SKU</Th>
-                <Th>Category</Th>
-                <Th>Price</Th>
-                <Th>Stock</Th>
-                <Th>Status</Th>
-                <Th></Th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.data.map((p) => (
-                <tr key={p._id}>
-                  <Td>
-                    <div className="flex items-center gap-3">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={p.images?.[0]}
-                        alt=""
-                        className="h-10 w-10 rounded-lg border border-border object-cover"
-                      />
-                      <span className="font-medium text-heading">{p.name}</span>
-                    </div>
-                  </Td>
-                  <Td className="text-muted">{p.skuid}</Td>
-                  <Td>{typeof p.category === 'object' ? p.category.name : '—'}</Td>
-                  <Td className="font-semibold text-heading">{formatCurrency(p.price)}</Td>
-                  <Td>
-                    <span className={cn('font-semibold', p.quantity <= 5 ? 'text-warning' : 'text-body')}>
-                      {p.quantity}
-                    </span>
-                  </Td>
-                  <Td>
-                    <StatusBadge status={p.isActive ? 'active' : 'inactive'} />
-                  </Td>
-                  <Td>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => setEditing(p)}
-                        className="rounded-lg p-2 text-muted transition hover:bg-primary-light hover:text-primary"
-                        title="Edit"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                      <ConfirmButton
-                        onConfirm={() => remove(p._id)}
-                        title="Delete product"
-                        className="rounded-lg p-2 text-muted transition hover:bg-error/10 hover:text-error"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </ConfirmButton>
-                    </div>
-                  </Td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-          <Pager pagination={data.pagination} onPage={setPage} />
-        </>
+        <div className="flex items-start gap-4">
+          <div className={cn('min-w-0 flex-1 transition-all duration-300', selected && 'lg:max-w-[calc(100%-400px)]')}>
+            <DataTable
+              columns={columns}
+              data={data.data}
+              getRowId={(p) => p._id}
+              onRowClick={setSelected}
+              selectedId={selected?._id}
+            />
+            <Pager pagination={data.pagination} onPage={setPage} />
+          </div>
+          {selected && (
+            <DetailPanel
+              title={selected.name}
+              subtitle={selected.skuid}
+              image={selected.images?.[0]}
+              badge={<StatusBadge status={selected.isActive ? 'active' : 'inactive'} />}
+              onClose={() => setSelected(null)}
+              fields={[
+                { label: 'Category', value: typeof selected.category === 'object' ? selected.category.name : '—' },
+                { label: 'Price', value: formatCurrency(selected.price) },
+                { label: 'MRP', value: selected.mrp ? formatCurrency(selected.mrp) : '—' },
+                { label: 'Stock', value: selected.quantity },
+                { label: 'Rating', value: selected.rating ? `${selected.rating} (${selected.reviewCount ?? 0})` : '—' },
+                { label: 'Warranty', value: selected.warrantyMonths ? `${selected.warrantyMonths} months` : '—' },
+              ]}
+              actions={
+                <>
+                  <Button variant="outline" onClick={() => { setEditing(selected); setSelected(null); }}>
+                    <Pencil className="h-4 w-4" /> Edit
+                  </Button>
+                  <ConfirmButton
+                    onConfirm={() => remove(selected._id)}
+                    title="Delete product"
+                    className="rounded-xl border border-error/20 px-4 py-2 text-sm font-semibold text-error transition hover:bg-error/10"
+                  >
+                    Delete
+                  </ConfirmButton>
+                </>
+              }
+            />
+          )}
+        </div>
       )}
     </div>
   );
@@ -258,18 +292,18 @@ function ProductCard({
         </div>
 
         {hasDiscount && (
-          <span className="absolute bottom-2 left-2 rounded-full bg-error px-2 py-0.5 text-[10px] font-bold text-white">
+          <span className="absolute bottom-2 left-2 rounded-full bg-error px-2 py-0.5 text-xs font-bold text-white">
             {discountPct}% OFF
           </span>
         )}
       </div>
 
       <div className="p-3">
-        <p className="truncate text-sm font-semibold text-heading">{p.name}</p>
-        <p className="text-xs text-muted">{typeof p.category === 'object' ? p.category.name : ''}</p>
+        <p className="truncate text-base font-semibold text-heading">{p.name}</p>
+        <p className="text-sm text-muted">{typeof p.category === 'object' ? p.category.name : ''}</p>
 
         {(p.rating ?? 0) > 0 && (
-          <div className="mt-1 flex items-center gap-1 text-xs text-muted">
+          <div className="mt-1 flex items-center gap-1 text-sm text-muted">
             <Star className="h-3.5 w-3.5 fill-warning text-warning" />
             <span className="font-medium text-heading">{p.rating}</span>
             <span>({p.reviewCount ?? 0})</span>
@@ -279,11 +313,11 @@ function ProductCard({
         <div className="mt-2 flex items-baseline gap-2">
           <span className="text-base font-bold text-heading">{formatCurrency(p.price)}</span>
           {hasDiscount && (
-            <span className="text-xs text-muted line-through">{formatCurrency(p.mrp as number)}</span>
+            <span className="text-sm text-muted line-through">{formatCurrency(p.mrp as number)}</span>
           )}
         </div>
 
-        <p className={cn('mt-1 text-xs font-medium', p.quantity <= 5 ? 'text-warning' : 'text-success')}>
+        <p className={cn('mt-1 text-sm font-medium', p.quantity <= 5 ? 'text-warning' : 'text-success')}>
           {p.quantity > 0 ? `${p.quantity} in stock` : 'Out of stock'}
         </p>
       </div>

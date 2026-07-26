@@ -16,6 +16,27 @@ export class ApiError extends Error {
     this.status = status;
     this.details = details;
   }
+
+  /**
+   * Per-field messages, e.g. `{ expiryDate: "expiryDate must be after issueDate" }`.
+   * Backed by the backend's Zod `.flatten()` shape (`details.fieldErrors`) — pass
+   * these to each `<Field error={...}>` so users see exactly which input is wrong,
+   * instead of one generic banner at the bottom of the form.
+   */
+  fieldErrors(): Record<string, string> {
+    const d = this.details as { fieldErrors?: Record<string, string[]> } | undefined;
+    if (!d?.fieldErrors) return {};
+    return Object.fromEntries(
+      Object.entries(d.fieldErrors)
+        .filter((entry): entry is [string, string[]] => Boolean(entry[1]?.length))
+        .map(([field, msgs]) => [field, msgs[0]]),
+    );
+  }
+}
+
+/** Human-readable message for any caught error — use in toasts and error banners. */
+export function errorMessage(err: unknown, fallback = 'Something went wrong'): string {
+  return err instanceof Error && err.message ? err.message : fallback;
 }
 
 interface RequestOptions {
@@ -41,6 +62,23 @@ function buildUrl(path: string, query?: RequestOptions['query']): string {
     }
   }
   return url.toString();
+}
+
+/**
+ * The backend wraps every Zod validation failure in the generic message
+ * "Validation failed", with the actual field-level reason buried in
+ * `details.fieldErrors` (Zod's `.flatten()` shape). Surface the first real
+ * reason instead — otherwise every form just shows "Validation failed" no
+ * matter what's actually wrong.
+ */
+function formatErrorMessage(message: string | undefined, details: unknown): string {
+  const base = message || 'Request failed';
+  if (details && typeof details === 'object' && 'fieldErrors' in details) {
+    const fieldErrors = (details as { fieldErrors?: Record<string, string[]> }).fieldErrors;
+    const first = fieldErrors && Object.entries(fieldErrors).find(([, msgs]) => msgs?.length);
+    if (first) return `${first[1][0]} (${first[0]})`;
+  }
+  return base;
 }
 
 let refreshPromise: Promise<boolean> | null = null;
@@ -103,7 +141,7 @@ export async function request<T>(path: string, opts: RequestOptions = {}): Promi
   }
 
   if (!res.ok || json.success === false) {
-    throw new ApiError(res.status, json.message || 'Request failed', json.details);
+    throw new ApiError(res.status, formatErrorMessage(json.message, json.details), json.details);
   }
   return json;
 }
@@ -132,7 +170,7 @@ async function uploadFile(
 
   const json = (await res.json()) as ApiEnvelope<{ url: string }>;
   if (!res.ok || json.success === false) {
-    throw new ApiError(res.status, json.message || 'Upload failed', json.details);
+    throw new ApiError(res.status, formatErrorMessage(json.message || 'Upload failed', json.details), json.details);
   }
   return json;
 }

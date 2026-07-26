@@ -6,12 +6,11 @@ import { api, ApiError } from '@/lib/api';
 import { toast } from '@/lib/toast';
 import { useApi } from '@/hooks/useApi';
 import { useAuth } from '@/lib/auth-store';
-import { formatDate } from '@/lib/format';
+import { formatDate, cn } from '@/lib/format';
 import {
   PageHeader,
-  Table,
-  Th,
-  Td,
+  DataTable,
+  DetailPanel,
   Loading,
   ErrorState,
   EmptyState,
@@ -19,6 +18,7 @@ import {
   Button,
   StatusSelect,
 } from '@/components/ui';
+import type { DataTableColumn } from '@/components/ui';
 import { FilterChip, Pager } from '@/components/table-controls';
 import { UserForm } from './UserForm';
 import type { User, Pagination } from '@/lib/types';
@@ -36,6 +36,7 @@ export default function UsersPage() {
   const [role, setRole] = useState('');
   const [page, setPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);
+  const [selected, setSelected] = useState<User | null>(null);
 
   const { data, loading, error, refetch } = useApi<{ data: User[]; pagination?: Pagination }>(
     () => api.getList<User[]>('/users', { role: role || undefined, page, limit: 15 }),
@@ -53,6 +54,50 @@ export default function UsersPage() {
       toast.error(err instanceof ApiError ? err.message : 'Failed to update role');
     }
   }
+
+  const columns: DataTableColumn<User>[] = [
+    {
+      key: 'name',
+      label: 'Name',
+      render: (u) => (
+        <span className="font-medium text-heading">
+          {u.firstName} {u.lastName}
+        </span>
+      ),
+    },
+    { key: 'email', label: 'Email', render: (u) => <span className="text-muted">{u.email}</span> },
+    { key: 'mobile', label: 'Mobile', render: (u) => u.mobile || '—' },
+    { key: 'role', label: 'Role', render: (u) => <StatusBadge status={ROLE_LABEL[u.role] ?? u.role} /> },
+    {
+      key: 'joined',
+      label: 'Joined',
+      render: (u) => (
+        <span className="text-muted">{formatDate((u as unknown as { createdAt: string }).createdAt)}</span>
+      ),
+    },
+    ...(isAdmin
+      ? [
+          {
+            key: 'changeRole',
+            label: 'Change Role',
+            render: (u: User) =>
+              u.id === me?.id ? (
+                <span className="text-sm text-muted">You</span>
+              ) : (
+                <div onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+                  <StatusSelect
+                    ariaLabel="Change role"
+                    value={u.role}
+                    onChange={(v) => changeRole(u.id, v)}
+                    options={[...ROLES]}
+                    format={(r) => ROLE_LABEL[r] ?? r}
+                  />
+                </div>
+              ),
+          },
+        ]
+      : []),
+  ];
 
   return (
     <div>
@@ -96,51 +141,46 @@ export default function UsersPage() {
       ) : !data || data.data.length === 0 ? (
         <EmptyState message="No users found." />
       ) : (
-        <>
-          <Table>
-            <thead>
-              <tr>
-                <Th>Name</Th>
-                <Th>Email</Th>
-                <Th>Mobile</Th>
-                <Th>Role</Th>
-                <Th>Joined</Th>
-                {isAdmin && <Th>Change Role</Th>}
-              </tr>
-            </thead>
-            <tbody>
-              {data.data.map((u) => (
-                <tr key={u.id}>
-                  <Td className="font-medium text-heading">
-                    {u.firstName} {u.lastName}
-                  </Td>
-                  <Td className="text-muted">{u.email}</Td>
-                  <Td>{u.mobile || '—'}</Td>
-                  <Td>
-                    <StatusBadge status={ROLE_LABEL[u.role] ?? u.role} />
-                  </Td>
-                  <Td className="text-muted">{formatDate((u as unknown as { createdAt: string }).createdAt)}</Td>
-                  {isAdmin && (
-                    <Td>
-                      {u.id === me?.id ? (
-                        <span className="text-xs text-muted">You</span>
-                      ) : (
-                        <StatusSelect
-                          ariaLabel="Change role"
-                          value={u.role}
-                          onChange={(v) => changeRole(u.id, v)}
-                          options={[...ROLES]}
-                          format={(r) => ROLE_LABEL[r] ?? r}
-                        />
-                      )}
-                    </Td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-          <Pager pagination={data.pagination} onPage={setPage} />
-        </>
+        <div className="flex items-start gap-4">
+          <div className={cn('min-w-0 flex-1 transition-all duration-300', selected && 'lg:max-w-[calc(100%-400px)]')}>
+            <DataTable
+              columns={columns}
+              data={data.data}
+              getRowId={(u) => u.id}
+              onRowClick={setSelected}
+              selectedId={selected?.id}
+            />
+            <Pager pagination={data.pagination} onPage={setPage} />
+          </div>
+          {selected && (
+            <DetailPanel
+              title={`${selected.firstName} ${selected.lastName}`}
+              subtitle={selected.email}
+              badge={<StatusBadge status={ROLE_LABEL[selected.role] ?? selected.role} />}
+              onClose={() => setSelected(null)}
+              fields={[
+                { label: 'Mobile', value: selected.mobile || '—' },
+                { label: 'Email verified', value: selected.emailVerified ? 'Yes' : 'No' },
+                {
+                  label: 'Joined',
+                  value: formatDate((selected as unknown as { createdAt: string }).createdAt),
+                },
+              ]}
+              actions={
+                isAdmin &&
+                selected.id !== me?.id && (
+                  <StatusSelect
+                    ariaLabel="Change role"
+                    value={selected.role}
+                    onChange={(v) => changeRole(selected.id, v)}
+                    options={[...ROLES]}
+                    format={(r) => ROLE_LABEL[r] ?? r}
+                  />
+                )
+              }
+            />
+          )}
+        </div>
       )}
     </div>
   );

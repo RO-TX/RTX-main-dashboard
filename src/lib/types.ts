@@ -33,7 +33,7 @@ export interface ApiEnvelope<T> {
   success: boolean;
   data: T;
   message?: string;
-  meta?: { pagination?: Pagination };
+  meta?: { pagination?: Pagination; unreadCount?: number } & Record<string, unknown>;
   details?: unknown;
 }
 
@@ -63,6 +63,8 @@ export interface Product {
   category: { _id: string; name: string; slug: string } | string;
   isTopSeller: boolean;
   productType: string;
+  colors?: string[];
+  sizes?: string[];
   shipment_width?: string;
   shipment_height?: string;
   shipment_length?: string;
@@ -76,15 +78,51 @@ export interface Product {
   createdAt: string;
 }
 
+export interface OrderItem {
+  product: { _id: string; name: string; skuid: string; images: string[]; price?: number } | string;
+  quantity: number;
+  price: number;
+}
+
+export interface GuestCustomer {
+  name: string;
+  mobile: string;
+  email?: string;
+}
+
 export interface Order {
   _id: string;
   orderId: string;
-  user?: { firstName: string; lastName: string; email: string } | string;
-  items: Array<{ product: unknown; quantity: number; price: number }>;
+  user?: { firstName: string; lastName: string; email: string; mobile?: string } | string;
+  guestCustomer?: GuestCustomer;
+  createdByStaff?: { firstName: string; lastName: string } | string;
+  items: OrderItem[];
   totalAmount: number;
   status: string;
+  shippingAddress?: {
+    address: string;
+    state: string;
+    city: string;
+    postalCode: string;
+    country: string;
+    mobile: string;
+  };
   paymentStatus: string;
   paymentMethod: string;
+  notes?: string;
+  adminNotes?: string;
+  createdAt: string;
+  updatedAt?: string;
+  deliveredAt?: string;
+}
+
+export interface Notification {
+  _id: string;
+  type: 'order' | 'amc_enquiry' | 'repair_request';
+  title: string;
+  message: string;
+  link: string;
+  readBy: string[];
   createdAt: string;
 }
 
@@ -111,6 +149,10 @@ export interface Review {
   name: string;
   position: string;
   description: string;
+  rating: number;
+  location: string;
+  featured: boolean;
+  source: 'admin' | 'customer';
   createdAt: string;
 }
 

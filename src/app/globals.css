@@ -6,68 +6,109 @@
  * border-border, etc. — and exposes var(--color-*) for direct use.
  */
 @theme {
-  /* Brand is navy-only (teal removed). Primary === navy base; interactive
-     controls AND emphasis surfaces both use the navy scale, with hierarchy
-     coming from shade depth + glassmorphism rather than a second hue. */
-  --color-primary: #062f4f;
-  --color-primary-hover: #0e3c5c;
-  --color-primary-light: #eef3f7;
+  /* Reskinned 2026-07 to match the reference dashboard 1:1 — these are its
+     literal oklch tokens (app/globals.css of experiment-dashboard-1), with
+     every hue 155 (green) swapped for hue 250 (blue). Lightness/chroma are
+     untouched so the exact "feel" (contrast, saturation) carries over.
+     `navy-*` keeps its name (many files reference navy-100..900) but now IS
+     the blue ramp built out from the reference's chart-1..5 progression. */
+  --color-primary: oklch(0.42 0.15 250);
+  /* No --color-primary-hover: the reference has no separate hover token — it
+     hovers via `hover:bg-primary/90` opacity in Tailwind, which is what every
+     primary-colored control here now does too (byte-for-byte, not invented). */
+  --color-primary-light: oklch(0.96 0.01 250); /* == reference --secondary/--muted */
 
-  /* "Deep water" navy — base #062F4F + full shade scale. */
-  --color-navy: #062f4f;
-  --color-navy-50: #eef3f7;
-  --color-navy-100: #cfdeea;
-  --color-navy-200: #a0bdd1;
-  --color-navy-300: #6a93b2;
-  --color-navy-400: #3c6c90;
-  --color-navy-500: #1c4e71;
-  --color-navy-600: #0e3c5c;
-  --color-navy-700: #062f4f;
-  --color-navy-800: #05263f;
-  --color-navy-900: #03192b;
+  --color-navy: oklch(0.42 0.15 250);
+  --color-navy-50: oklch(0.97 0.02 250);
+  --color-navy-100: oklch(0.92 0.04 250);
+  --color-navy-200: oklch(0.85 0.07 250);
+  --color-navy-300: oklch(0.75 0.1 250);
+  --color-navy-400: oklch(0.65 0.13 250);
+  --color-navy-500: oklch(0.55 0.18 250); /* == reference --accent */
+  --color-navy-600: oklch(0.48 0.16 250);
+  --color-navy-700: oklch(0.42 0.15 250); /* == --color-primary */
+  --color-navy-800: oklch(0.34 0.13 250);
+  --color-navy-900: oklch(0.22 0.1 250);
 
-  --color-background: #fafafc;
-  --color-surface: #ffffff;
-  --color-surface-alt: #f3f8f9;
+  --color-background: oklch(0.98 0.005 250); /* reference --background */
+  --color-surface: oklch(1 0 0); /* reference --card */
+  --color-surface-alt: oklch(0.96 0.01 250); /* reference --secondary/--muted */
 
-  --color-heading: #12243b;
-  --color-body: #445364;
-  --color-muted: #6c7a86;
+  --color-heading: oklch(0.25 0.02 250); /* reference --foreground */
+  --color-body: oklch(0.38 0.02 250); /* interpolated: RTX has a 3-tier heading/body/muted scale, reference only has 2 */
+  --color-muted: oklch(0.55 0.02 250); /* reference --muted-foreground */
 
-  --color-border: #d8e3e9;
-  --color-border-light: #eef3f5;
+  --color-border: oklch(0.92 0.01 250); /* reference --border/--input */
+  --color-border-light: oklch(0.95 0.01 250);
 
-  --color-accent: #3c6c90; /* navy-400 — secondary accent */
-  --color-glow: #a0bdd1; /* navy-200 — focus rings, light diffusion */
+  --color-accent: oklch(0.55 0.18 250); /* reference --accent */
+  --color-glow: oklch(0.85 0.07 250); /* navy-200 — focus rings, light diffusion */
   --color-stone: #c8b8a6;
+
+  --color-chart-1: oklch(0.42 0.15 250);
+  --color-chart-2: oklch(0.55 0.18 250);
+  --color-chart-3: oklch(0.65 0.12 250);
+  --color-chart-4: oklch(0.75 0.08 250);
+  --color-chart-5: oklch(0.85 0.04 250);
 
   --color-success: #10b981;
   --color-warning: #f59e0b;
-  --color-error: #ef4444;
-  --color-info: #062f4f;
+  --color-error: oklch(0.577 0.245 27.325); /* reference --destructive */
+  --color-info: oklch(0.42 0.15 250);
 
   --font-sans: var(--font-outfit), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 
-  --radius-card: 1rem;
+  --radius-card: 1.25rem;
+}
+
+/*
+ * Desktop bump: every text-* utility reads its size off a --text-* custom
+ * property (Tailwind v4), so nudging these ~1px larger at the `lg` breakpoint
+ * (1024px+, where there's room to spare) improves readability without
+ * touching every className. Line-heights nudge by the same ~1px so leading
+ * stays proportional. Mobile/tablet keep the stock Tailwind scale.
+ */
+@media (min-width: 1024px) {
+  :root {
+    --text-xs: 0.8125rem; /* 12px → 13px */
+    --text-xs--line-height: 1.0625rem;
+    --text-sm: 0.9375rem; /* 14px → 15px */
+    --text-sm--line-height: 1.3125rem;
+    --text-base: 1.0625rem; /* 16px → 17px */
+    --text-base--line-height: 1.5625rem;
+    --text-lg: 1.1875rem; /* 18px → 19px */
+    --text-lg--line-height: 1.8125rem;
+    --text-xl: 1.3125rem; /* 20px → 21px */
+    --text-xl--line-height: 1.8125rem;
+    --text-2xl: 1.5625rem; /* 24px → 25px */
+    --text-2xl--line-height: 2.0625rem;
+    --text-3xl: 1.9375rem; /* 30px → 31px */
+    --text-3xl--line-height: 2.3125rem;
+  }
 }
 
 html,
 body {
-  /* Navy-tinted wash with three soft orbs so frosted glass has real depth to
-     refract. Kept low-contrast to protect text legibility on the surfaces above. */
-  background:
-    radial-gradient(1200px 650px at 100% -8%, color-mix(in srgb, var(--color-navy-300) 45%, transparent), transparent 58%),
-    radial-gradient(1000px 560px at -12% 108%, color-mix(in srgb, var(--color-navy-200) 55%, transparent), transparent 60%),
-    radial-gradient(760px 520px at 52% 48%, color-mix(in srgb, var(--color-navy-100) 40%, transparent), transparent 62%),
-    var(--color-background);
-  background-attachment: fixed;
+  /* Flat, near-white background — no gradient wash (matches the reference's
+     plain light bg rather than the old navy-tinted glass wash). */
+  background: var(--color-background);
   color: var(--color-body);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
 
-* {
-  border-color: var(--color-border);
+/*
+ * Sane default border color (Tailwind v4's own default is `currentColor`,
+ * not a neutral gray). MUST live in @layer base — plain unlayered CSS beats
+ * ALL of Tailwind's layered utilities regardless of specificity, which
+ * silently neutered every `border-{color}` utility in the app (e.g.
+ * `border-primary/25`, `border-error/20`) back to this gray, no matter how
+ * specific the class. Layering it lets utilities override it as expected.
+ */
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
 }
 
 /* Thin, subtle scrollbars to match the calm aesthetic */
@@ -85,124 +126,47 @@ body {
 }
 
 /*
- * Frosted-glass system. One recipe, three elevations. Each surface has:
- *   - a translucent white fill (kept high enough for AA text contrast)
- *   - backdrop blur + saturation (the frost)
- *   - a top-down sheen + a 1px inset specular highlight (reads as real glass)
- *   - a navy-tinted drop shadow (on-brand depth)
- * The shared --glass-sheen layer is what makes these look like glass rather
- * than plain translucent panels.
+ * Flat card system (matches the reference dashboard — solid white cards,
+ * thin border, soft shadow, NO glassmorphism/blur). Class names kept as-is
+ * (.card/.glass/.glass-card/.glass-strong etc.) so every existing component
+ * call site picked this up automatically without edits.
  */
 .card,
-.glass {
+.glass,
+.glass-card,
+.glass-strong {
   position: relative;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 42%),
-    color-mix(in srgb, #ffffff 72%, transparent);
-  backdrop-filter: blur(18px) saturate(150%);
-  -webkit-backdrop-filter: blur(18px) saturate(150%);
-  /* Outer surface (incl. table container) = clear 2px boundary */
-  border: 2px solid color-mix(in srgb, var(--color-border) 92%, transparent);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-card);
-  box-shadow:
-    0 12px 36px -18px rgba(6, 47, 79, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  box-shadow: 0 1px 2px rgba(16, 31, 61, 0.04), 0 8px 24px -12px rgba(16, 31, 61, 0.08);
 }
 
 /*
  * Border hierarchy helpers — the deeper you nest, the thinner the boundary.
- *   .panel-2  → mid-level group inside a card (1.5px)
- *   .panel-3  → innermost grouping (1px)
- * Field rows get a slightly darker fill so each is clearly separated.
+ *   .panel-2  → mid-level group inside a card
+ *   .field-row → innermost grouping
  */
 .panel-2 {
-  border: 1.5px solid var(--color-border);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-2xl);
-  background: color-mix(in srgb, var(--color-navy-50) 55%, #ffffff);
+  background: var(--color-surface-alt);
 }
 .field-row {
   border: 1px solid var(--color-border);
   border-radius: 0.75rem;
-  background: color-mix(in srgb, var(--color-navy-100) 30%, #ffffff);
+  background: var(--color-surface-alt);
 }
 
-/* Stronger frost for overlay panels (modals, popovers) — most opaque for forms. */
-.glass-strong {
-  position: relative;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 40%),
-    color-mix(in srgb, #ffffff 86%, transparent);
-  backdrop-filter: blur(22px) saturate(160%);
-  -webkit-backdrop-filter: blur(22px) saturate(160%);
-  border: 1px solid color-mix(in srgb, #ffffff 65%, var(--color-border));
-  box-shadow:
-    0 24px 60px -20px rgba(6, 47, 79, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.75);
-}
-
-/* Frosted scrim behind modals/dialogs — blur signals background dismissal. */
+/* Scrim behind modals/dialogs. */
 .glass-scrim {
-  background: color-mix(in srgb, var(--color-navy-900) 42%, transparent);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: color-mix(in srgb, var(--color-navy-900) 55%, transparent);
 }
 
-/* Translucent frosted input — for search/fields that sit on glass. */
+/* Search/field on a colored surface — plain surface-alt fill, no blur. */
 .glass-input {
-  background: color-mix(in srgb, #ffffff 55%, transparent);
-  border: 1px solid color-mix(in srgb, #ffffff 45%, var(--color-border));
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-/*
- * Premium glass card — frosted surface with a soft inner luminance and two
- * luminous edge-lights (a horizontal streak across the top, a vertical streak
- * down the left) that catch the light like a real glass panel. For card DIVS
- * only — it clips overflow, so don't use it on scroll containers (tables).
- * Note: the inner glow alpha is kept ~0.22 (not the copied `3`) so the surface
- * stays frosted and text remains legible on a light background.
- */
-.glass-card {
-  position: relative;
-  overflow: hidden;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 44%),
-    color-mix(in srgb, #ffffff 66%, transparent);
-  backdrop-filter: blur(28px) saturate(155%);
-  -webkit-backdrop-filter: blur(28px) saturate(155%);
-  /* Outer card = thickest, clearest boundary (border hierarchy) */
-  border: 2px solid color-mix(in srgb, var(--color-border) 92%, transparent);
-  border-radius: var(--radius-card);
-  box-shadow:
-    0 14px 40px -20px rgba(6, 47, 79, 0.34),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.12),
-    inset 0 0 40px 6px rgba(255, 255, 255, 0.22);
-}
-/* Edge-lights (shared with overlay panels for a consistent glass language). */
-.glass-card::before,
-.glass-strong::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.85), transparent);
-}
-.glass-card::after,
-.glass-strong::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 1px;
-  height: 100%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.85), transparent, rgba(255, 255, 255, 0.3));
-}
-.glass-strong {
-  overflow: hidden;
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
 }
 
 /* Animations */

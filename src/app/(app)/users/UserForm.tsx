@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Loader2, X, UserPlus } from 'lucide-react';
-import { api, ApiError } from '@/lib/api';
+import { api, ApiError, errorMessage } from '@/lib/api';
 import { toast } from '@/lib/toast';
 import { Button, FieldSelect } from '@/components/ui';
 import { Field, Input, FormError } from '@/components/form';
@@ -28,6 +28,7 @@ export function UserForm({ onClose, onSaved }: { onClose: () => void; onSaved: (
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const set =
     (k: keyof typeof form) =>
@@ -45,6 +46,7 @@ export function UserForm({ onClose, onSaved }: { onClose: () => void; onSaved: (
     e.preventDefault();
     setSaving(true);
     setError(null);
+    setFieldErrors({});
     try {
       await api.post('/users', {
         firstName: form.firstName,
@@ -57,7 +59,8 @@ export function UserForm({ onClose, onSaved }: { onClose: () => void; onSaved: (
       toast.success('Staff account created');
       onSaved();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to create user');
+      if (err instanceof ApiError) setFieldErrors(err.fieldErrors());
+      setError(errorMessage(err, 'Failed to create user'));
       setSaving(false);
     }
   }
@@ -71,7 +74,7 @@ export function UserForm({ onClose, onSaved }: { onClose: () => void; onSaved: (
           </span>
           <div>
             <h2 className="font-bold text-heading">Create staff account</h2>
-            <p className="text-xs text-muted">Add a call center agent, micro admin, or admin.</p>
+            <p className="text-sm text-muted">Add a call center agent, micro admin, or admin.</p>
           </div>
         </div>
         <button
@@ -84,31 +87,31 @@ export function UserForm({ onClose, onSaved }: { onClose: () => void; onSaved: (
       </div>
 
       <form onSubmit={submit} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <Field label="First name" required>
+        <Field label="First name" required error={fieldErrors.firstName}>
           <Input required value={form.firstName} onChange={set('firstName')} placeholder="Ravi" />
         </Field>
-        <Field label="Last name" required>
+        <Field label="Last name" required error={fieldErrors.lastName}>
           <Input required value={form.lastName} onChange={set('lastName')} placeholder="Kumar" />
         </Field>
-        <Field label="Role" required hint={roleHint}>
+        <Field label="Role" required hint={roleHint} error={fieldErrors.role}>
           <FieldSelect
             value={form.role}
             onChange={(v) => setForm((f) => ({ ...f, role: v }))}
             options={STAFF_ROLES.map((r) => ({ value: r.value, label: r.label }))}
           />
         </Field>
-        <Field label="Email" required>
+        <Field label="Email" required error={fieldErrors.email}>
           <Input required type="email" value={form.email} onChange={set('email')} placeholder="ravi@rotechnicalxperts.com" />
         </Field>
-        <Field label="Mobile" hint="10 digits (optional)">
+        <Field label="Mobile" hint="10 digits (optional)" error={fieldErrors.mobile}>
           <Input value={form.mobile} onChange={set('mobile')} placeholder="9876543210" />
         </Field>
-        <Field label="Temporary password" required hint="Min 8 characters">
+        <Field label="Temporary password" required hint="Min 8 characters" error={fieldErrors.password}>
           <Input required type="text" value={form.password} onChange={set('password')} placeholder="Set a password" />
         </Field>
 
         <div className="sm:col-span-2 lg:col-span-3">
-          <FormError message={error} />
+          {Object.keys(fieldErrors).length === 0 && <FormError message={error} />}
           <div className="mt-1 flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel

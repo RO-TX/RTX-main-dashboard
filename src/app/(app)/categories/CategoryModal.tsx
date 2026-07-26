@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { api, ApiError } from '@/lib/api';
+import { api, ApiError, errorMessage } from '@/lib/api';
 import { toast } from '@/lib/toast';
 import { Button, InlinePanel, FieldSelect, ImageUploader } from '@/components/ui';
 import { Field, Input, Textarea, FormError } from '@/components/form';
@@ -26,6 +26,7 @@ export function CategoryModal({
   const [image, setImage] = useState(category?.catImage ? [category.catImage] : []);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const set =
     (k: keyof typeof form) =>
@@ -40,6 +41,7 @@ export function CategoryModal({
     }
     setSaving(true);
     setError(null);
+    setFieldErrors({});
     const payload = { ...form, catImage: image[0] };
     try {
       if (isEdit) {
@@ -51,7 +53,8 @@ export function CategoryModal({
       }
       onSaved();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to save category');
+      if (err instanceof ApiError) setFieldErrors(err.fieldErrors());
+      setError(errorMessage(err, 'Failed to save category'));
       setSaving(false);
     }
   }
@@ -59,13 +62,13 @@ export function CategoryModal({
   return (
     <InlinePanel onClose={onClose} title={isEdit ? 'Edit Category' : 'Add Category'}>
       <form onSubmit={submit} className="space-y-3">
-        <Field label="Name" required>
+        <Field label="Name" required error={fieldErrors.name}>
           <Input required value={form.name} onChange={set('name')} placeholder="Domestic RO Systems" />
         </Field>
-        <Field label="Image" required>
+        <Field label="Image" required error={fieldErrors.catImage}>
           <ImageUploader images={image} onChange={setImage} folder="categories" max={1} />
         </Field>
-        <Field label="Type">
+        <Field label="Type" error={fieldErrors.categoryType}>
           <FieldSelect
             value={form.categoryType}
             onChange={(v) => setForm((f) => ({ ...f, categoryType: v as typeof f.categoryType }))}
@@ -76,11 +79,11 @@ export function CategoryModal({
             ]}
           />
         </Field>
-        <Field label="Description">
+        <Field label="Description" error={fieldErrors.description}>
           <Textarea value={form.description} onChange={set('description')} rows={2} />
         </Field>
 
-        <FormError message={error} />
+        {Object.keys(fieldErrors).length === 0 && <FormError message={error} />}
 
         <div className="flex justify-end gap-2 pt-2">
           <Button type="button" variant="outline" onClick={onClose}>

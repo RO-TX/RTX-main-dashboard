@@ -32,7 +32,7 @@ export function Toaster() {
             )}
           >
             <Icon className="mt-0.5 h-5 w-5 shrink-0" />
-            <p className="flex-1 text-sm font-medium text-heading">{t.message}</p>
+            <p className="flex-1 text-base font-medium text-heading">{t.message}</p>
             <button
               onClick={() => dismiss(t.id)}
               className="rounded p-0.5 text-muted transition hover:text-heading"

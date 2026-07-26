@@ -11,7 +11,6 @@ import {
   ClipboardList,
   Settings,
   TerminalSquare,
-  CircleUser,
   ShieldCheck,
 } from 'lucide-react';
 import type { Role } from './types';
@@ -56,9 +55,8 @@ export const NAV: NavItem[] = [
   { href: '/repair-requests', label: 'Repair Requests', icon: Wrench, roles: STAFF_OPS, group: 'content' },
   { href: '/amc-enquiries', label: 'AMC Enquiries', icon: ClipboardList, roles: STAFF_OPS, group: 'content' },
 
-  { href: '/profile', label: 'My Profile', icon: CircleUser, roles: EVERYONE, group: 'general' },
   { href: '/login-logs', label: 'Login Logs', icon: ShieldCheck, roles: ADMIN_ONLY, group: 'general' },
-  { href: '/settings', label: 'Settings', icon: Settings, roles: ADMIN_ONLY, group: 'general' },
+  { href: '/settings', label: 'Settings', icon: Settings, roles: EVERYONE, group: 'general' },
   { href: '/api-tester', label: 'API Tester', icon: TerminalSquare, roles: ADMIN_ONLY, group: 'general' },
 ];
 
@@ -88,7 +86,7 @@ export function defaultRouteFor(role: Role): string {
   const first = NAV.find(
     (n) => n.roles.includes(role) && n.group !== 'general',
   );
-  return first?.href ?? '/profile';
+  return first?.href ?? '/settings';
 }
 
 /* ── Permission flags ── */

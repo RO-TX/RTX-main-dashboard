@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
-import { api, ApiError } from '@/lib/api';
+import { Loader2, X } from 'lucide-react';
+import { api, ApiError, errorMessage } from '@/lib/api';
 import { useApi } from '@/hooks/useApi';
 import { toast } from '@/lib/toast';
 import { Button, InlinePanel, FieldSelect, ImageUploader } from '@/components/ui';
@@ -46,8 +46,11 @@ export function ProductModal({
     reviewCount: product?.reviewCount?.toString() ?? '0',
   });
   const [images, setImages] = useState<string[]>(product?.images ?? []);
+  const [colors, setColors] = useState<string[]>(product?.colors ?? []);
+  const [sizes, setSizes] = useState<string[]>(product?.sizes ?? []);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const set =
     (k: keyof typeof form) =>
@@ -75,6 +78,7 @@ export function ProductModal({
     }
     setSaving(true);
     setError(null);
+    setFieldErrors({});
     const payload = {
       name: form.name,
       skuid: form.skuid,
@@ -96,6 +100,8 @@ export function ProductModal({
       hsnCode: form.hsnCode,
       rating: Number(form.rating) || 0,
       reviewCount: Number(form.reviewCount) || 0,
+      colors,
+      sizes,
     };
     try {
       if (isEdit) {
@@ -107,7 +113,8 @@ export function ProductModal({
       }
       onSaved();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to save product');
+      if (err instanceof ApiError) setFieldErrors(err.fieldErrors());
+      setError(errorMessage(err, 'Failed to save product'));
       setSaving(false);
     }
   }
@@ -115,14 +122,14 @@ export function ProductModal({
   return (
     <InlinePanel onClose={onClose} title={isEdit ? 'Edit Product' : 'Add Product'}>
       <form onSubmit={submit} className="space-y-3">
-        <Field label="Name" required>
+        <Field label="Name" required error={fieldErrors.name}>
           <Input required value={form.name} onChange={set('name')} placeholder="AquaPure 8L RO+UV" />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="SKU ID" required>
+          <Field label="SKU ID" required error={fieldErrors.skuid}>
             <Input required value={form.skuid} onChange={set('skuid')} placeholder="RTX-0001" disabled={isEdit} />
           </Field>
-          <Field label="Category" required>
+          <Field label="Category" required error={fieldErrors.category}>
             <FieldSelect
               required
               value={form.category}
@@ -133,24 +140,24 @@ export function ProductModal({
         </div>
         {/* Price breakup — mid-tier grouping (inside the outer form card) */}
         <div className="panel-2 p-4">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Price breakup</p>
+          <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">Price breakup</p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Field label="MRP (₹)" hint="List price">
+            <Field label="MRP (₹)" hint="List price" error={fieldErrors.mrp}>
               <Input type="number" min="0" value={form.mrp} onChange={set('mrp')} placeholder="15999" />
             </Field>
-            <Field label="Selling (₹)" required hint="Incl. GST">
+            <Field label="Selling (₹)" required hint="Incl. GST" error={fieldErrors.price}>
               <Input required type="number" min="0" value={form.price} onChange={set('price')} placeholder="12999" />
             </Field>
-            <Field label="GST %">
+            <Field label="GST %" error={fieldErrors.gstRate}>
               <Input type="number" min="0" max="100" value={form.gstRate} onChange={set('gstRate')} placeholder="18" />
             </Field>
-            <Field label="Installation (₹)">
+            <Field label="Installation (₹)" error={fieldErrors.installationCharge}>
               <Input type="number" min="0" value={form.installationCharge} onChange={set('installationCharge')} placeholder="0" />
             </Field>
           </div>
 
           {priceN > 0 && (
-            <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 border-t border-border-light pt-3 text-xs sm:grid-cols-4">
+            <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 border-t border-border-light pt-3 text-sm sm:grid-cols-4">
               {discountPct > 0 && (
                 <Breakup label="Discount" value={`${discountPct}% off`} accent />
               )}
@@ -162,36 +169,51 @@ export function ProductModal({
           )}
         </div>
 
-        <Field label="Stock qty" required>
+        <Field label="Stock qty" required error={fieldErrors.quantity}>
           <Input required type="number" min="0" value={form.quantity} onChange={set('quantity')} placeholder="25" />
         </Field>
 
-        <Field label="Images" required hint="First image is used as the primary thumbnail">
+        <Field label="Images" required hint="First image is used as the primary thumbnail" error={fieldErrors.images}>
           <ImageUploader images={images} onChange={setImages} folder="products" />
         </Field>
 
-        <Field label="Description">
+        <Field label="Description" error={fieldErrors.description}>
           <Textarea value={form.description} onChange={set('description')} rows={2} />
         </Field>
 
+        {/* Optional variant attributes — most spares/cartridges have neither */}
+        <div className="panel-2 p-4">
+          <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">
+            Colour & size options <span className="normal-case text-muted">(optional)</span>
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Colours" hint="e.g. White, Blue — leave empty if not applicable" error={fieldErrors.colors}>
+              <TagInput values={colors} onChange={setColors} placeholder="Type a colour, press Enter" />
+            </Field>
+            <Field label="Sizes" hint="e.g. 8L, 10L, 15L — leave empty if not applicable" error={fieldErrors.sizes}>
+              <TagInput values={sizes} onChange={setSizes} placeholder="Type a size, press Enter" />
+            </Field>
+          </div>
+        </div>
+
         {/* Shipping & packaging */}
         <div className="panel-2 p-4">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Shipping & packaging</p>
+          <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">Shipping & packaging</p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Field label="Length (cm)">
+            <Field label="Length (cm)" error={fieldErrors.shipment_length}>
               <Input value={form.shipment_length} onChange={set('shipment_length')} placeholder="40" />
             </Field>
-            <Field label="Width (cm)">
+            <Field label="Width (cm)" error={fieldErrors.shipment_width}>
               <Input value={form.shipment_width} onChange={set('shipment_width')} placeholder="30" />
             </Field>
-            <Field label="Height (cm)">
+            <Field label="Height (cm)" error={fieldErrors.shipment_height}>
               <Input value={form.shipment_height} onChange={set('shipment_height')} placeholder="55" />
             </Field>
-            <Field label="Weight (kg)">
+            <Field label="Weight (kg)" error={fieldErrors.weight}>
               <Input value={form.weight} onChange={set('weight')} placeholder="12.5" />
             </Field>
           </div>
-          <label className="mt-3 flex items-center gap-2 text-sm text-body">
+          <label className="mt-3 flex items-center gap-2 text-base text-body">
             <input
               type="checkbox"
               checked={form.fragile}
@@ -204,24 +226,24 @@ export function ProductModal({
 
         {/* Compliance & trust signals */}
         <div className="panel-2 p-4">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Compliance & ratings</p>
+          <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">Compliance & ratings</p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Field label="HSN code" hint="For GST invoicing">
+            <Field label="HSN code" hint="For GST invoicing" error={fieldErrors.hsnCode}>
               <Input value={form.hsnCode} onChange={set('hsnCode')} placeholder="84212100" />
             </Field>
-            <Field label="Warranty (months)">
+            <Field label="Warranty (months)" error={fieldErrors.warrantyMonths}>
               <Input type="number" min="0" value={form.warrantyMonths} onChange={set('warrantyMonths')} placeholder="12" />
             </Field>
-            <Field label="Rating (0-5)" hint="Shown until real reviews exist">
+            <Field label="Rating (0-5)" hint="Shown until real reviews exist" error={fieldErrors.rating}>
               <Input type="number" min="0" max="5" step="0.1" value={form.rating} onChange={set('rating')} placeholder="4.8" />
             </Field>
-            <Field label="Review count">
+            <Field label="Review count" error={fieldErrors.reviewCount}>
               <Input type="number" min="0" value={form.reviewCount} onChange={set('reviewCount')} placeholder="120" />
             </Field>
           </div>
         </div>
 
-        <label className="flex items-center gap-2 text-sm text-body">
+        <label className="flex items-center gap-2 text-base text-body">
           <input
             type="checkbox"
             checked={form.isTopSeller}
@@ -231,7 +253,7 @@ export function ProductModal({
           Mark as top seller
         </label>
 
-        <FormError message={error} />
+        {Object.keys(fieldErrors).length === 0 && <FormError message={error} />}
 
         <div className="flex justify-end gap-2 pt-2">
           <Button type="button" variant="outline" onClick={onClose}>
@@ -244,6 +266,56 @@ export function ProductModal({
         </div>
       </form>
     </InlinePanel>
+  );
+}
+
+/** Chip list — type a value, press Enter/comma to add, click × to remove. */
+function TagInput({
+  values,
+  onChange,
+  placeholder,
+}: {
+  values: string[];
+  onChange: (v: string[]) => void;
+  placeholder?: string;
+}) {
+  const [draft, setDraft] = useState('');
+
+  function commit() {
+    const v = draft.trim();
+    if (v && !values.includes(v)) onChange([...values, v]);
+    setDraft('');
+  }
+
+  return (
+    <div className="flex min-h-10 flex-wrap items-center gap-1.5 rounded-xl border border-border bg-surface px-2 py-1.5 focus-within:border-primary focus-within:ring-2 focus-within:ring-glow">
+      {values.map((v) => (
+        <span
+          key={v}
+          className="flex items-center gap-1 rounded-full bg-primary-light px-2 py-0.5 text-sm font-medium text-primary"
+        >
+          {v}
+          <button type="button" onClick={() => onChange(values.filter((x) => x !== v))} aria-label={`Remove ${v}`}>
+            <X className="h-3 w-3" />
+          </button>
+        </span>
+      ))}
+      <input
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            commit();
+          } else if (e.key === 'Backspace' && !draft && values.length > 0) {
+            onChange(values.slice(0, -1));
+          }
+        }}
+        onBlur={commit}
+        placeholder={values.length === 0 ? placeholder : ''}
+        className="min-w-[8ch] flex-1 bg-transparent text-sm outline-none placeholder:text-muted"
+      />
+    </div>
   );
 }
 

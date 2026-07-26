@@ -12,7 +12,7 @@ import {
 import { api } from '@/lib/api';
 import { useApi } from '@/hooks/useApi';
 import { formatCurrency, formatDateTime, cn } from '@/lib/format';
-import { Card, Loading, ErrorState, StatusBadge } from '@/components/ui';
+import { PageHeader, Card, Loading, ErrorState, StatusBadge } from '@/components/ui';
 import type { Overview, RevenuePoint, Order } from '@/lib/types';
 
 export default function OverviewPage() {
@@ -34,10 +34,7 @@ export default function OverviewPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-extrabold text-heading">Welcome back! 👋</h1>
-        <p className="mt-1 text-sm text-muted">Here&apos;s what&apos;s happening across RTX today.</p>
-      </div>
+      <PageHeader title="Welcome back! 👋" subtitle="Here's what's happening across RTX today." />
 
       {/* KPI cards */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -75,9 +72,9 @@ export default function OverviewPage() {
           <div className="mb-6 flex items-center justify-between">
             <div>
               <h2 className="font-bold text-heading">Revenue Analytics</h2>
-              <p className="text-xs text-muted">Last 7 days</p>
+              <p className="text-sm text-muted">Last 7 days</p>
             </div>
-            <span className="inline-flex items-center gap-1 rounded-lg bg-primary-light px-2.5 py-1 text-xs font-semibold text-primary">
+            <span className="inline-flex items-center gap-1 rounded-lg bg-primary-light px-2.5 py-1 text-sm font-semibold text-primary">
               <TrendingUp className="h-3.5 w-3.5" /> This Week
             </span>
           </div>
@@ -99,14 +96,14 @@ export default function OverviewPage() {
       <Card>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-bold text-heading">Recent Orders</h2>
-          <a href="/orders" className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">
+          <a href="/orders" className="inline-flex items-center gap-1 text-base font-semibold text-primary hover:underline">
             View all <ArrowUpRight className="h-4 w-4" />
           </a>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
+          <table className="w-full text-left text-base">
             <thead>
-              <tr className="text-xs uppercase tracking-wide text-muted">
+              <tr className="text-sm uppercase tracking-wide text-muted">
                 <th className="pb-3 font-semibold">Order</th>
                 <th className="pb-3 font-semibold">Customer</th>
                 <th className="pb-3 font-semibold">Amount</th>
@@ -177,7 +174,7 @@ function KpiCard({
         </>
       )}
       <div className="relative flex items-start justify-between">
-        <span className={cn('text-sm font-medium', highlight ? 'text-white/80' : 'text-muted')}>
+        <span className={cn('text-base font-medium', highlight ? 'text-white/80' : 'text-muted')}>
           {label}
         </span>
         <span
@@ -195,7 +192,7 @@ function KpiCard({
       {sub && (
         <p
           className={cn(
-            'relative mt-1 flex items-center gap-1 text-xs',
+            'relative mt-1 flex items-center gap-1 text-sm',
             highlight ? 'text-white/70' : warn ? 'text-warning' : 'text-muted',
           )}
         >
@@ -284,12 +281,12 @@ const STATUS_ORDER = ['orderplaced', 'processing', 'shipped', 'delivered', 'canc
 
 function StatusBreakdown({ data, total }: { data: Record<string, number>; total: number }) {
   const entries = STATUS_ORDER.filter((s) => data[s]).map((s) => [s, data[s]] as const);
-  if (entries.length === 0) return <p className="text-sm text-muted">No orders yet.</p>;
+  if (entries.length === 0) return <p className="text-base text-muted">No orders yet.</p>;
   return (
     <div className="space-y-3">
       {entries.map(([status, count]) => (
         <div key={status}>
-          <div className="mb-1 flex items-center justify-between text-sm">
+          <div className="mb-1 flex items-center justify-between text-base">
             <span className="capitalize text-body">{status}</span>
             <span className="font-semibold text-heading">{count}</span>
           </div>
@@ -309,7 +306,7 @@ function MiniStat({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-xl bg-surface-alt p-3">
       <p className="text-2xl font-extrabold text-heading">{value}</p>
-      <p className="text-xs text-muted">{label}</p>
+      <p className="text-sm text-muted">{label}</p>
     </div>
   );
 }
