@@ -1,14 +1,30 @@
 'use client';
 
 import { useState } from 'react';
-import { Loader2, X } from 'lucide-react';
+import { Loader2, Plus, X } from 'lucide-react';
 import { api, ApiError, errorMessage } from '@/lib/api';
 import { useApi } from '@/hooks/useApi';
 import { toast } from '@/lib/toast';
 import { Button, InlinePanel, FieldSelect, ImageUploader } from '@/components/ui';
 import { Field, Input, Textarea, FormError } from '@/components/form';
 import { formatCurrency } from '@/lib/format';
-import type { Category, Product } from '@/lib/types';
+import type { Category, Product, ProductSpec } from '@/lib/types';
+
+const SPEC_ICONS = [
+  'shield',
+  'tds',
+  'droplet',
+  'smart',
+  'filter',
+  'flow',
+  'warranty',
+  'install',
+  'families',
+  'delivery',
+  'payment',
+  'genuine',
+  'returns',
+];
 
 /** Create OR edit a product. Pass `product` to edit; omit to create. */
 export function ProductModal({
@@ -25,6 +41,7 @@ export function ProductModal({
 
   const [form, setForm] = useState({
     name: product?.name ?? '',
+    subtitle: product?.subtitle ?? '',
     skuid: product?.skuid ?? '',
     mrp: product?.mrp?.toString() ?? '',
     price: product?.price?.toString() ?? '',
@@ -48,6 +65,7 @@ export function ProductModal({
   const [images, setImages] = useState<string[]>(product?.images ?? []);
   const [colors, setColors] = useState<string[]>(product?.colors ?? []);
   const [sizes, setSizes] = useState<string[]>(product?.sizes ?? []);
+  const [specs, setSpecs] = useState<ProductSpec[]>(product?.specs ?? []);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -81,6 +99,7 @@ export function ProductModal({
     setFieldErrors({});
     const payload = {
       name: form.name,
+      subtitle: form.subtitle,
       skuid: form.skuid,
       mrp: Number(form.mrp) || 0,
       price: Number(form.price),
@@ -102,6 +121,7 @@ export function ProductModal({
       reviewCount: Number(form.reviewCount) || 0,
       colors,
       sizes,
+      specs: specs.filter((s) => s.label[0].trim() || s.label[1].trim()),
     };
     try {
       if (isEdit) {
@@ -124,6 +144,14 @@ export function ProductModal({
       <form onSubmit={submit} className="space-y-3">
         <Field label="Name" required error={fieldErrors.name}>
           <Input required value={form.name} onChange={set('name')} placeholder="AquaPure 8L RO+UV" />
+        </Field>
+        <Field label="Subtitle" hint="One line shown under the name on the product page" error={fieldErrors.subtitle}>
+          <Input
+            maxLength={80}
+            value={form.subtitle}
+            onChange={set('subtitle')}
+            placeholder="7-stage purification with UV shield"
+          />
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="SKU ID" required error={fieldErrors.skuid}>
@@ -194,6 +222,14 @@ export function ProductModal({
               <TagInput values={sizes} onChange={setSizes} placeholder="Type a size, press Enter" />
             </Field>
           </div>
+        </div>
+
+        {/* PDP spec strip — icon + two-line callout, e.g. "18 ppm / Tested output" */}
+        <div className="panel-2 p-4">
+          <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">
+            Spec strip <span className="normal-case text-muted">(shown on the product page)</span>
+          </p>
+          <SpecsEditor specs={specs} onChange={setSpecs} />
         </div>
 
         {/* Shipping & packaging */}
@@ -315,6 +351,76 @@ function TagInput({
         placeholder={values.length === 0 ? placeholder : ''}
         className="min-w-[8ch] flex-1 bg-transparent text-sm outline-none placeholder:text-muted"
       />
+    </div>
+  );
+}
+
+/** Repeatable icon + two-line-label rows, e.g. {icon:'tds', label:['18 ppm','Tested output']}. */
+function SpecsEditor({
+  specs,
+  onChange,
+}: {
+  specs: ProductSpec[];
+  onChange: (v: ProductSpec[]) => void;
+}) {
+  function update(i: number, patch: { icon?: string; label0?: string; label1?: string }) {
+    onChange(
+      specs.map((s, idx) => {
+        if (idx !== i) return s;
+        const label: [string, string] = [
+          patch.label0 !== undefined ? patch.label0 : s.label[0],
+          patch.label1 !== undefined ? patch.label1 : s.label[1],
+        ];
+        return { icon: patch.icon ?? s.icon, label };
+      }),
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {specs.map((s, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <select
+            value={s.icon}
+            onChange={(e) => update(i, { icon: e.target.value })}
+            className="h-10 rounded-xl border border-border bg-surface px-2 text-sm"
+          >
+            {SPEC_ICONS.map((k) => (
+              <option key={k} value={k}>
+                {k}
+              </option>
+            ))}
+          </select>
+          <input
+            value={s.label[0]}
+            onChange={(e) => update(i, { label0: e.target.value })}
+            placeholder="18 ppm"
+            className="h-10 flex-1 rounded-xl border border-border bg-surface px-2 text-sm"
+          />
+          <input
+            value={s.label[1]}
+            onChange={(e) => update(i, { label1: e.target.value })}
+            placeholder="Tested output"
+            className="h-10 flex-1 rounded-xl border border-border bg-surface px-2 text-sm"
+          />
+          <button
+            type="button"
+            onClick={() => onChange(specs.filter((_, idx) => idx !== i))}
+            aria-label="Remove spec"
+            className="text-muted hover:text-body"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      ))}
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => onChange([...specs, { icon: SPEC_ICONS[0], label: ['', ''] }])}
+      >
+        <Plus className="h-4 w-4" />
+        Add spec
+      </Button>
     </div>
   );
 }

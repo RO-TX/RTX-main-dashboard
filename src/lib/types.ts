@@ -48,11 +48,18 @@ export interface Category {
   createdAt: string;
 }
 
+export interface ProductSpec {
+  icon: string;
+  label: [string, string];
+}
+
 export interface Product {
   _id: string;
   skuid: string;
   slug: string;
   name: string;
+  subtitle?: string;
+  specs?: ProductSpec[];
   images: string[];
   description: string;
   mrp?: number;
